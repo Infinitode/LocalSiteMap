@@ -7,6 +7,9 @@
 
 LocalSiteMap is an open-source Python package designed for generating sitemaps from local files. It tracks `HTML` and `HTM` files, and generates complete sitemaps for the root website, including directories.
 
+### Changes in version 1.0.1:
+- Added `show_progress` boolean to print out mapping progress, pages mapped, and files found.
+
 ### Changes in version 1.0.0:
 - Added initial package code, with automatic directory crawling to generate the `sitemap.xml` file.
 
@@ -59,7 +62,7 @@ base_url_of_your_website = "https://example.com"
 excluded = ["auth", "forms", "template.html", "media", ".git", ".vscode", "node_modules"]  # Example exclusions
 
 # Generate the sitemap
-generate_sitemap(root_directory, base_url_of_your_website, "sitemap.xml", excluded)
+generate_sitemap(root_directory, base_url_of_your_website, "sitemap.xml", excluded, show_progress=True)
 print("Sitemap generated in sitemap.xml")
 ```
 

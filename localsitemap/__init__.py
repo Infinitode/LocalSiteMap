@@ -3,7 +3,7 @@ import datetime
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
 
-def generate_sitemap(root_path, base_url, output_file="sitemap.xml", excluded_paths=None):
+def generate_sitemap(root_path, base_url, output_file="sitemap.xml", excluded_paths=None, show_progress=False):
     """
     Generates a sitemap XML file by crawling a directory structure.
 
@@ -27,6 +27,8 @@ def generate_sitemap(root_path, base_url, output_file="sitemap.xml", excluded_pa
             full_dir_path = os.path.join(root, dir_name)
             if any(excluded in full_dir_path for excluded in excluded_paths):
                 continue
+            if show_progress:
+                print(f"Mapping directory: {full_dir_path}")
             relative_dir_path = os.path.relpath(full_dir_path, root_path)
             url = os.path.join(base_url, relative_dir_path).replace("\\", "/") + "/"
             lastmod = datetime.datetime.fromtimestamp(os.path.getmtime(full_dir_path)).isoformat()
@@ -40,6 +42,10 @@ def generate_sitemap(root_path, base_url, output_file="sitemap.xml", excluded_pa
         for file in files:
             if file.endswith((".html", ".htm")):
                 full_path = os.path.join(root, file)
+
+                if show_progress:
+                    print(f"Found file: {full_path}")
+
                 relative_path = os.path.relpath(full_path, root_path)
 
                 # Check if the file should be excluded
@@ -67,6 +73,10 @@ def generate_sitemap(root_path, base_url, output_file="sitemap.xml", excluded_pa
     xml_string = tostring(urlset, "utf-8")
     reparsed = minidom.parseString(xml_string)
     pretty_xml = reparsed.toprettyxml(indent="  ")
+
+    if show_progress:
+        print(f"Total pages mapped: {len(urlset)}")
+        print(f"Saving sitemap to {output_file}...")
 
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(pretty_xml)
