@@ -8,7 +8,7 @@ setup(
     version='{{VERSION_PLACEHOLDER}}',
     author='Infinitode Pty Ltd',
     author_email='infinitode.ltd@gmail.com',
-    description="LocalSiteMap is an open-source Python library designed to make dataset analysis much easier by generating helpful detailed plots using matplotlib based on your dataset.",
+    description="LocalSiteMap is an open-source Python package designed for generating sitemaps and sitemap indexes from local files by crawling directories recursively.",
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/infinitode/localsitemap',
