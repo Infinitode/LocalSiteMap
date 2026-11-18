@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=77.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "localsitemap"
+dynamic = ["version"]
+description = "Generate sitemaps and sitemap indexes from local files by crawling directories recursively."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Infinitode Pty Ltd", email = "infinitode.ltd@gmail.com" },
+]
+keywords = [
+    "sitemap",
+    "sitemap-index",
+    "seo",
+    "static-site",
+    "xml",
+    "crawler",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Internet :: WWW/HTTP :: Site Management",
+    "Topic :: Text Processing :: Markup :: XML",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Infinitode/LocalSiteMap"
+Repository = "https://github.com/Infinitode/LocalSiteMap"
+Issues = "https://github.com/Infinitode/LocalSiteMap/issues"
+Changelog = "https://github.com/Infinitode/LocalSiteMap/releases"
+PyPI = "https://pypi.org/project/localsitemap/"
+
+[project.scripts]
+localsitemap = "localsitemap.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "localsitemap._version.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["localsitemap*"]
+namespaces = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+exclude = ["build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B"]
+ignore = ["B905"]  # zip(strict=...) requires Python 3.10
