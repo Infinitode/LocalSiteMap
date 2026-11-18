@@ -1,34 +1,137 @@
 name: Publish Python 🐍 distributions 📦 to PyPI
 
+# Publishing uses PyPI Trusted Publishing (OIDC) - no API token is stored in
+# this repository. The publisher configured on PyPI must match:
+#   owner/repository : Infinitode/LocalSiteMap
+#   workflow         : build_and_publish.yml
+#   environment      : (left blank - therefore no `environment:` key below)
+#
+# Every upload is signed with PEP 740 attestations, which is what powers the
+# "provenance" indicator on the PyPI project page.
+
 on:
   push:
     tags:
-       - '*'
+      - 'v[0-9]*'
+      - '[0-9]*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  build-n-publish:
-    name: Build and publish Python 🐍 distributions 📦 to PyPI
+  build:
+    name: Build distribution 📦
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
-    - uses: actions/checkout@master
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.12'
-    - name: Install pypa/setuptools
-      run: >-
-        python -m
-        pip install setuptools wheel
-    - name: Extract tag name
-      id: tag
-      run: echo ::set-output name=TAG_NAME::$(echo $GITHUB_REF | cut -d / -f 3)
-    - name: Update version in setup.py
-      run: >-
-        sed -i "s/{{VERSION_PLACEHOLDER}}/${{ steps.tag.outputs.TAG_NAME }}/g" setup.py
-    - name: Build a binary wheel
-      run: >-
-        python setup.py sdist bdist_wheel
-    - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@master
-      with:
-        password: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build tooling
+        run: >-
+          python -m pip install --upgrade
+          build
+          twine
+          setuptools
+          wheel
+
+      - name: Run the test suite
+        run: python -m unittest -v test_localsitemap
+
+      - name: Determine the release version
+        id: version
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="$(python -c 'from localsitemap._version import __version__; print(__version__)')"
+          fi
+          python - "${VERSION}" <<'PY'
+          import pathlib
+          import re
+          import sys
+
+          version = sys.argv[1].strip()
+          pattern = r"^[0-9]+(\.[0-9]+)*((a|b|rc)[0-9]+)?(\.post[0-9]+)?(\.dev[0-9]+)?$"
+          if not re.match(pattern, version):
+              sys.exit("Invalid release version: %r" % version)
+
+          target = pathlib.Path("localsitemap/_version.py")
+          target.write_text(
+              '"""Single source of truth for the LocalSiteMap version.\n\n'
+              "The release workflow rewrites this file from the pushed git tag, so the\n"
+              'version published to PyPI always matches the tag.\n"""\n\n'
+              '__version__ = "%s"\n' % version,
+              encoding="utf-8",
+          )
+          print("Building version", version)
+          PY
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Check the distribution metadata
+        run: python -m twine check --strict dist/*
+
+      - name: Upload the distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: Publish distribution 📦 to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    # NOTE: intentionally no `environment:` key. The PyPI trusted publisher is
+    # configured with a blank environment name, and adding one here would make
+    # the OIDC token claim mismatch and the upload fail.
+    permissions:
+      id-token: write  # required for Trusted Publishing and attestations
+    steps:
+      - name: Download the distribution artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true
+          print-hash: true
+
+  verify-provenance:
+    name: Verify published provenance 🛡️
+    needs:
+      - build
+      - publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Confirm every published file carries provenance
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: >-
+          python .github/scripts/verify_provenance.py
+          --project localsitemap
+          --version "${VERSION}"
