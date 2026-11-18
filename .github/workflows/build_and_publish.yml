@@ -92,6 +92,10 @@ jobs:
   publish:
     name: Publish distribution 📦 to PyPI
     needs: build
+    # Only real tag pushes publish. A manual "Run workflow" therefore builds,
+    # tests and validates the distributions without touching PyPI, which also
+    # makes it safe to run before Trusted Publishing is configured.
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     # NOTE: intentionally no `environment:` key. The PyPI trusted publisher is
     # configured with a blank environment name, and adding one here would make
@@ -116,6 +120,7 @@ jobs:
     needs:
       - build
       - publish
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
       contents: read
