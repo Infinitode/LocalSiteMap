@@ -35,16 +35,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-        python-version:
-          - '3.9'
-          - '3.10'
-          - '3.11'
-          - '3.12'
-          - '3.13'
-          - '3.14'
         include:
+          # Python 3.9 ships in the tool cache of the 22.04 image.
+          - os: ubuntu-22.04
+            python-version: '3.9'
+          - os: ubuntu-latest
+            python-version: '3.10'
+          - os: ubuntu-latest
+            python-version: '3.11'
+          - os: ubuntu-latest
+            python-version: '3.12'
+          - os: ubuntu-latest
+            python-version: '3.13'
+          - os: ubuntu-latest
+            python-version: '3.14'
           - os: windows-latest
             python-version: '3.12'
     steps:
